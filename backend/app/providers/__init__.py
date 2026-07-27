@@ -2,39 +2,37 @@ from app.providers.base import MailProvider, OutboundMessage, SendResult
 
 
 class YandexSmtpProvider:
-    """Заглушка под Яндекс.Почту (SMTP). Реальная отправка — в следующей итерации."""
+    """Wrapper: available when OAuth credentials are configured at send-time."""
 
     type = "yandex_smtp"
-    display_name = "Яндекс.Почта (SMTP)"
+    display_name = "Яндекс.Почта (SMTP XOAUTH2)"
     description = (
-        "Отправка через smtp.yandex.ru. Потребуются логин и пароль приложения. "
-        "Интеграция пока не подключена."
+        "Отправка через smtp.yandex.com с OAuth. "
+        "Подключите аккаунт на вкладке «Интеграции»."
     )
 
     @property
     def available(self) -> bool:
-        return False
+        return True
 
     async def validate(self) -> bool:
-        return False
+        return True
 
     async def send_batch(self, messages: list[OutboundMessage]) -> SendResult:
         return SendResult(
             provider=self.type,
             sent=0,
             failed=len(messages),
-            message="Яндекс.Почта ещё не подключена. Используйте экспорт CSV/JSON.",
+            message="Используйте POST /api/campaigns/{id}/send",
         )
 
 
 class MailingServiceProvider:
-    """Заглушка под сервисы рассылок (UniSender / SendPulse и т.п.)."""
-
     type = "mailing_service"
     display_name = "Сервис рассылок"
     description = (
         "Интеграция с UniSender / SendPulse / аналогами через API. "
-        "Пока недоступна — используйте экспорт."
+        "Пока недоступна — используйте Яндекс.Почту."
     )
 
     @property
@@ -49,7 +47,7 @@ class MailingServiceProvider:
             provider=self.type,
             sent=0,
             failed=len(messages),
-            message="Сервис рассылок ещё не подключен. Используйте экспорт CSV/JSON.",
+            message="Сервис рассылок ещё не подключен.",
         )
 
 
@@ -65,3 +63,12 @@ def list_providers() -> list[MailProvider]:
 
 def get_provider(provider_type: str) -> MailProvider | None:
     return PROVIDERS.get(provider_type)
+
+
+__all__ = [
+    "PROVIDERS",
+    "YandexSmtpProvider",
+    "MailingServiceProvider",
+    "get_provider",
+    "list_providers",
+]

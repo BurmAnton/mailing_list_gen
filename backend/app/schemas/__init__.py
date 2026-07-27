@@ -35,6 +35,9 @@ class CampaignOut(BaseModel):
     use_web_search: bool = False
     use_segment_templates: bool = False
     segment_field: str | None = None
+    metrika_counter_id: int | None = None
+    metrika_goal_id: int | None = None
+    landing_url: str | None = None
     status: CampaignStatus
     created_at: datetime | None = None
     updated_at: datetime | None = None

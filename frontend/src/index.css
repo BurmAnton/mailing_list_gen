@@ -396,6 +396,259 @@ table.data th {
   color: var(--accent);
 }
 
+.campaign-tab-link {
+  margin: 0.5rem 0 0.75rem;
+  font-size: 0.85rem;
+}
+
+.campaign-tab-link code {
+  font-size: 0.82rem;
+  word-break: break-all;
+}
+
+.campaign-quick-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.campaign-quick-links a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.campaign-quick-links a:hover {
+  text-decoration: underline;
+}
+
+.dash-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.dash-banner {
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  background: #f7f8fa;
+}
+
+.dash-banner strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.dash-banner p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.dash-banner--ok {
+  background: #eef7f1;
+  border-color: #b7dcc4;
+}
+
+.dash-banner--warn {
+  background: #fff8e8;
+  border-color: #f0d79a;
+}
+
+.dash-banner--danger {
+  background: #fdeeee;
+  border-color: #f0b4b4;
+}
+
+.dash-banner--muted {
+  background: #f5f6f8;
+}
+
+.dash-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 1.1rem;
+}
+
+.dash-kpi {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #fff;
+  padding: 0.75rem 0.65rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-height: 5.2rem;
+}
+
+.dash-kpi strong {
+  font-size: 1.35rem;
+  line-height: 1.1;
+  font-weight: 650;
+}
+
+.dash-kpi span {
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.dash-kpi small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.dash-kpi.is-ok strong {
+  color: var(--ok);
+}
+
+.dash-kpi.is-danger strong {
+  color: var(--danger);
+}
+
+.dash-hints {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  margin-bottom: 1rem;
+  background: #fafbfc;
+}
+
+.dash-hints h3 {
+  margin: 0 0 0.55rem;
+  font-size: 0.98rem;
+}
+
+.dash-hints ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.dash-hints li {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 0.65rem;
+  align-items: start;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.35;
+}
+
+.dash-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.75rem 0 0.85rem;
+}
+
+.dash-filter.is-active {
+  background: #eef5f2;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.dash-send-row {
+  cursor: pointer;
+}
+
+.dash-send-row:hover {
+  background: #f3f8f6;
+}
+
+.dash-send-row:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.dash-send-subject {
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+  max-width: 22rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dash-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  background: rgba(18, 22, 28, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.dash-modal {
+  width: min(920px, 100%);
+  max-height: min(90vh, 900px);
+  background: #fff;
+  border-radius: calc(var(--radius) + 2px);
+  border: 1px solid var(--line);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.dash-modal__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.dash-modal__body {
+  padding: 0;
+  min-height: 320px;
+  flex: 1;
+  overflow: hidden;
+  background: #f4f5f7;
+}
+
+.dash-mail-frame {
+  width: 100%;
+  height: min(70vh, 720px);
+  border: 0;
+  background: #fff;
+  display: block;
+}
+
+.dash-mail-plain {
+  margin: 0;
+  padding: 1rem;
+  white-space: pre-wrap;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  max-height: min(70vh, 720px);
+  overflow: auto;
+}
+
+@media (max-width: 960px) {
+  .dash-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dash-hints li {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+  }
+}
+
 .campaign-tab-panel {
   margin-bottom: 0;
 }

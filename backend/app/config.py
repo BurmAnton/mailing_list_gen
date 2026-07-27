@@ -34,6 +34,16 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./data/mailing.db"
     cors_origins: str = "http://localhost:5173"
 
+    # Yandex OAuth (Mail SMTP + Metrika)
+    yandex_oauth_client_id: str = ""
+    yandex_oauth_client_secret: str = ""
+    yandex_oauth_redirect_uri: str = "https://oauth.yandex.ru/verification_code"
+    yandex_oauth_scopes: str = "mail:smtp mail:imap_ro metrika:read"
+    yandex_mail_from: str = ""
+    public_base_url: str = "http://127.0.0.1:8000"
+    tracking_hmac_secret: str = "mailcraft-dev-tracking-secret"
+    send_throttle_seconds: float = 45.0
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

@@ -26,6 +26,11 @@ class Campaign(Base):
     segment_field: Mapped[str | None] = mapped_column(String(255), nullable=True)
     rag_digest_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     rag_digest_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    metrika_counter_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    metrika_goal_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    landing_url: Mapped[str | None] = mapped_column(
+        String(2048), nullable=True, default="https://comquaagent.copp-hightech.ru/"
+    )
     status: Mapped[CampaignStatus] = mapped_column(
         Enum(CampaignStatus), default=CampaignStatus.draft, nullable=False
     )

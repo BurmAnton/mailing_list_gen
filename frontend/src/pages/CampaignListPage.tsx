@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api, type Campaign, type LLMModel } from '../api';
+import { campaignTabPath } from '../campaignTabs';
 
 function modelOptionLabel(m: LLMModel): string {
   const price = m.price_label ? ` — ${m.price_label}` : '';
@@ -133,7 +134,7 @@ export function CampaignListPage() {
       // #region agent log
       _dbg('navigate_success', {id:campaign.id,warnings}, 'E');
       // #endregion
-      navigate(`/campaigns/${campaign.id}`, {
+      navigate(campaignTabPath(campaign.id, 'settings'), {
         state: warnings.length ? { createWarnings: warnings } : undefined,
       });
     } catch (err) {
@@ -327,6 +328,7 @@ export function CampaignListPage() {
                   <th>Получатели</th>
                   <th>RAG</th>
                   <th>Черновики</th>
+                  <th>Быстрый вход</th>
                 </tr>
               </thead>
               <tbody>
@@ -341,7 +343,7 @@ export function CampaignListPage() {
                       />
                     </td>
                     <td>
-                      <Link className="campaign-link" to={`/campaigns/${c.id}`}>
+                      <Link className="campaign-link" to={campaignTabPath(c.id, 'settings')}>
                         {c.name}
                       </Link>
                     </td>
@@ -352,6 +354,11 @@ export function CampaignListPage() {
                     <td>{c.recipient_count}</td>
                     <td>{c.rag_file_count}</td>
                     <td>{c.draft_count}</td>
+                    <td className="campaign-quick-links">
+                      <Link to={campaignTabPath(c.id, 'send')}>Рассылка</Link>
+                      <Link to={campaignTabPath(c.id, 'dashboard')}>Дашборд</Link>
+                      <Link to={campaignTabPath(c.id, 'drafts')}>Письма</Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

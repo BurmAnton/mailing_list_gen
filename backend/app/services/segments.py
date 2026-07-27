@@ -23,7 +23,9 @@ TYPED_SEGMENT_FIELDS: list[tuple[str, str]] = [
     ("name", "Контакт (name)"),
 ]
 
-ZONE_RE = re.compile(r"\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}")
+# Allow Cyrillic Excel headers and punctuation used in column names:
+# e.g. {{регион_(фо)}}, {{звонков_/_встреч_в_мес.}}
+ZONE_RE = re.compile(r"\{\{\s*([^{}]+?)\s*\}\}")
 
 
 def parse_extra(recipient: Recipient) -> dict[str, Any]:
@@ -34,6 +36,34 @@ def parse_extra(recipient: Recipient) -> dict[str, Any]:
         return data if isinstance(data, dict) else {}
     except json.JSONDecodeError:
         return {}
+
+
+def _norm_zone_key(value: str) -> str:
+    return re.sub(r"\s+", "", (value or "").strip().lower().replace("ё", "е"))
+
+
+def zone_values_from_excel(recipient: Recipient, zone_names: list[str]) -> dict[str, str]:
+    """Fill zones from Excel columns when names match (exact or normalized)."""
+    extra = parse_extra(recipient)
+    if not extra or not zone_names:
+        return {}
+    by_norm: dict[str, str] = {}
+    for k, v in extra.items():
+        if v is None:
+            continue
+        text = str(v).strip()
+        if not text:
+            continue
+        by_norm[_norm_zone_key(str(k))] = text
+    out: dict[str, str] = {}
+    for name in zone_names:
+        if name in extra and extra[name] is not None and str(extra[name]).strip():
+            out[name] = str(extra[name]).strip()
+            continue
+        hit = by_norm.get(_norm_zone_key(name))
+        if hit:
+            out[name] = hit
+    return out
 
 
 def recipient_field_value(recipient: Recipient, field_key: str) -> str:
@@ -250,10 +280,21 @@ def extract_zone_names(subject: str, body: str) -> list[str]:
 
 def apply_zones(template: str, zone_values: dict[str, str]) -> str:
     def repl(match: re.Match[str]) -> str:
-        name = match.group(1)
-        return zone_values.get(name, match.group(0))
+        name = match.group(1).strip()
+        if name in zone_values:
+            return zone_values[name]
+        # normalized fallback
+        want = _norm_zone_key(name)
+        for k, v in zone_values.items():
+            if _norm_zone_key(k) == want:
+                return v
+        return match.group(0)
 
     return ZONE_RE.sub(repl, template or "")
+
+
+def strip_unresolved_zones(text: str) -> str:
+    return ZONE_RE.sub("", text or "").strip()
 
 
 async def get_segment_for_recipient(

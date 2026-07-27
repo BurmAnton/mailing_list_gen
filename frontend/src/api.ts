@@ -40,11 +40,89 @@ export interface Campaign {
   use_web_search: boolean;
   use_segment_templates?: boolean;
   segment_field?: string | null;
+  metrika_counter_id?: number | null;
+  metrika_goal_id?: number | null;
+  landing_url?: string | null;
   status: CampaignStatus;
   recipient_count: number;
   draft_count: number;
   rag_file_count: number;
   created_at?: string;
+}
+
+export interface YandexStatus {
+  connected: boolean;
+  email?: string | null;
+  scopes?: string | null;
+  expires_at?: string | null;
+  has_refresh_token?: boolean;
+}
+
+export interface MetrikaCounter {
+  id: number;
+  name: string;
+  site?: string | null;
+  permission?: string | null;
+}
+
+export interface MetrikaGoal {
+  id: number;
+  name: string;
+  type?: string | null;
+}
+
+export interface SendProgress {
+  campaign_id: number;
+  running: boolean;
+  total: number;
+  counts: Record<string, number>;
+  confirmed_in_sent: number;
+}
+
+export interface DashboardSendRow {
+  send_id: number;
+  draft_id: number;
+  to_email: string;
+  company_name?: string | null;
+  subject?: string | null;
+  has_html?: boolean;
+  status: string;
+  sent_at?: string | null;
+  confirmed_in_sent: boolean;
+  error?: string | null;
+  opens: number;
+  unique_open: number;
+  clicks: number;
+  message_id?: string | null;
+}
+
+export interface SendPreview {
+  send_id: number;
+  draft_id: number;
+  to_email: string;
+  company_name?: string | null;
+  subject?: string | null;
+  body_text?: string | null;
+  html?: string | null;
+  status: string;
+  sent_at?: string | null;
+  error?: string | null;
+}
+
+export interface CampaignDashboard {
+  campaign_id: number;
+  landing_url?: string | null;
+  metrika_counter_id?: number | null;
+  metrika_goal_id?: number | null;
+  progress: SendProgress;
+  sends: DashboardSendRow[];
+  metrika?: {
+    error?: string;
+    rows?: Array<Record<string, unknown>>;
+    totals?: number[];
+    date1?: string;
+    date2?: string;
+  } | null;
 }
 
 export interface SegmentField {
@@ -315,4 +393,67 @@ export const api = {
   exportUrl: (id: number, format: 'csv' | 'json') =>
     `${API_BASE}/api/campaigns/${id}/export?format=${format}`,
   listProviders: () => request<Provider[]>('/api/providers'),
+  yandexOAuthStart: () => request<{ authorize_url: string }>('/api/integrations/yandex/oauth/start'),
+  yandexOAuthExchange: (code: string) =>
+    request<YandexStatus & { ok: boolean }>('/api/integrations/yandex/oauth/exchange', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    }),
+  yandexOAuthToken: (body: { access_token: string; email: string; refresh_token?: string }) =>
+    request<YandexStatus & { ok: boolean }>('/api/integrations/yandex/oauth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  yandexStatus: () => request<YandexStatus>('/api/integrations/yandex/status'),
+  yandexDisconnect: () =>
+    request<{ ok: boolean }>('/api/integrations/yandex/disconnect', { method: 'POST' }),
+  metrikaCounters: () => request<MetrikaCounter[]>('/api/integrations/metrika/counters'),
+  metrikaGoals: (counterId: number) =>
+    request<MetrikaGoal[]>(`/api/integrations/metrika/counters/${counterId}/goals`),
+  updateMetrikaConfig: (
+    id: number,
+    body: {
+      metrika_counter_id?: number | null;
+      metrika_goal_id?: number | null;
+      landing_url?: string | null;
+    },
+  ) =>
+    request<{ ok: boolean }>(`/api/campaigns/${id}/metrika-config`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  getBanner: (id: number) =>
+    request<{ source_url?: string | null; content?: string | null; has_content: boolean }>(
+      `/api/campaigns/${id}/banner`,
+    ),
+  putBanner: (id: number, body: { source_url?: string; content?: string }) =>
+    request<{ ok: boolean; has_content: boolean }>(`/api/campaigns/${id}/banner`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    }),
+  sendCampaign: (
+    id: number,
+    body: { draft_ids?: number[]; limit?: number; track?: boolean; throttle_seconds?: number },
+  ) =>
+    request<{ ok: boolean; queued?: number; send_ids?: number[]; message?: string }>(
+      `/api/campaigns/${id}/send`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      },
+    ),
+  sendProgress: (id: number) => request<SendProgress>(`/api/campaigns/${id}/send/progress`),
+  sendConfirm: (id: number) =>
+    request<{ ok: boolean; checked: number; confirmed: number; note?: string | null }>(
+      `/api/campaigns/${id}/send/confirm`,
+      { method: 'POST' },
+    ),
+  campaignDashboard: (id: number) => request<CampaignDashboard>(`/api/campaigns/${id}/dashboard`),
+  sendPreview: (campaignId: number, sendId: number) =>
+    request<SendPreview>(`/api/campaigns/${campaignId}/sends/${sendId}`),
 };

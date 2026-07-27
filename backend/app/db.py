@@ -54,6 +54,15 @@ async def _ensure_sqlite_columns(conn) -> None:
         )
     if "segment_field" not in existing:
         alterations.append("ALTER TABLE campaigns ADD COLUMN segment_field VARCHAR(255)")
+    if "metrika_counter_id" not in existing:
+        alterations.append("ALTER TABLE campaigns ADD COLUMN metrika_counter_id INTEGER")
+    if "metrika_goal_id" not in existing:
+        alterations.append("ALTER TABLE campaigns ADD COLUMN metrika_goal_id INTEGER")
+    if "landing_url" not in existing:
+        alterations.append(
+            "ALTER TABLE campaigns ADD COLUMN landing_url VARCHAR(2048) "
+            "DEFAULT 'https://comquaagent.copp-hightech.ru/'"
+        )
 
     # recipients
     result = await conn.execute(text("PRAGMA table_info(recipients)"))

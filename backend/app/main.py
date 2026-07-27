@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import router
+from app.api.integrations import router as integrations_router
+from app.api.integrations import track_router
 from app.config import get_settings
 from app.db import init_db
 
@@ -31,6 +33,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(router)
+app.include_router(integrations_router)
+app.include_router(track_router)
 
 
 @app.get("/health")

@@ -142,6 +142,10 @@ def _campaign_out(
         use_web_search=bool(getattr(campaign, "use_web_search", False)),
         use_segment_templates=bool(getattr(campaign, "use_segment_templates", False)),
         segment_field=getattr(campaign, "segment_field", None),
+        metrika_counter_id=getattr(campaign, "metrika_counter_id", None),
+        metrika_goal_id=getattr(campaign, "metrika_goal_id", None),
+        landing_url=getattr(campaign, "landing_url", None)
+        or "https://comquaagent.copp-hightech.ru/",
         status=campaign.status,
         created_at=campaign.created_at,
         updated_at=campaign.updated_at,

@@ -22,7 +22,9 @@ from app.services.segments import (
     extract_zone_names,
     get_segment_for_recipient,
     parse_zones_json,
+    strip_unresolved_zones,
     template_variant_a,
+    zone_values_from_excel,
 )
 from app.models.segment import CampaignSegment, SegmentTemplate, TemplateStatus
 
@@ -39,8 +41,9 @@ SYSTEM_PROMPT = (
 
 SEGMENT_TEMPLATE_SYSTEM = (
     "Ты копирайтер B2B-рассылок. Создай ОДИН шаблон письма для сегмента аудитории. "
-    "В subject и body используй зоны персонализации в формате {{zone_name}} "
-    "(латиница/snake_case), которые позже заполнят данными конкретной компании. "
+    "В subject и body используй зоны персонализации в формате {{zone_name}}. "
+    "Имена зон могут быть на русском и совпадать с колонками Excel "
+    "(напр. {{регион_(фо)}}, {{звонков_/_встреч_в_мес.}}) либо латиницей. "
     "Верни строго JSON: "
     '{"subject":"...","body":"...","zones":[{"name":"zone_name","hint":"что писать в зоне"}]}. '
     "Все {{zone_name}} из текста должны быть перечислены в zones. "
@@ -49,9 +52,12 @@ SEGMENT_TEMPLATE_SYSTEM = (
 )
 
 ZONE_FILL_SYSTEM = (
-    "Ты копирайтер. Дан шаблон письма с зонами {{name}}. "
+    "Ты копирайтер. Дан шаблон письма с зонами {{name}} "
+    "(имена могут быть на русском и совпадать с колонками Excel, напр. {{регион_(фо)}}). "
     "Заполни ТОЛЬКО значения зон под конкретную компанию. "
+    "Если зона = колонка Excel — подставь значение Excel как есть. "
     "Верни строго JSON: {\"zones\":{\"zone_name\":\"текст\"}}. "
+    "Ключи zones должны точно совпадать с именами зон в шаблоне. "
     "Не меняй каркас шаблона. Без markdown."
 )
 
@@ -235,12 +241,14 @@ async def generate_email_from_template(
     zone_map = data.get("zones") if isinstance(data.get("zones"), dict) else data
     if not isinstance(zone_map, dict):
         raise ValueError(f"Ожидался объект zones | raw_prefix={raw[:400]!r}")
-    values = {str(k): str(v).strip() for k, v in zone_map.items()}
+    llm_values = {str(k).strip(): str(v).strip() for k, v in zone_map.items()}
+    # Excel columns win for matching zone names (facts), LLM fills the rest
+    excel_values = zone_values_from_excel(recipient, zone_names)
+    values = {**llm_values, **excel_values}
     subject = apply_zones(template.subject_template, values).strip()
     body = apply_zones(template.body_template, values).strip()
-    # leave unresolved placeholders empty for readability
-    subject = re.sub(r"\{\{\s*[a-zA-Z_][a-zA-Z0-9_]*\s*\}\}", "", subject).strip()
-    body = re.sub(r"\{\{\s*[a-zA-Z_][a-zA-Z0-9_]*\s*\}\}", "", body).strip()
+    subject = strip_unresolved_zones(subject)
+    body = strip_unresolved_zones(body)
     if not subject or not body:
         raise ValueError(f"После подстановки зон пустые subject/body | raw_prefix={raw[:400]!r}")
     return subject, body, raw
