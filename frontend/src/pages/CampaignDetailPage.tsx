@@ -88,7 +88,7 @@ export function CampaignDetailPage() {
   const [recipients, setRecipients] = useState<Recipient[]>([]);
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [status, setStatus] = useState<CampaignStatusOut | null>(null);
-  const [providers, setProviders] = useState<Provider[]>([]);
+  const [, setProviders] = useState<Provider[]>([]);
   const [models, setModels] = useState<LLMModel[]>([]);
   const [ragFiles, setRagFiles] = useState<RagFile[]>([]);
   const [ragUrl, setRagUrl] = useState('');
