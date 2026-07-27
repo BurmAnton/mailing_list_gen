@@ -2,6 +2,8 @@ import asyncio
 import json
 import logging
 import re
+import time
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -284,22 +286,56 @@ def format_model_pricing(pricing: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-async def list_openrouter_search_rag_models() -> list[dict[str, Any]]:
+MODELS_CACHE_PATH = Path(__file__).resolve().parents[2] / "data" / "openrouter_models_cache.json"
+
+
+def _fallback_models() -> list[dict[str, Any]]:
     settings = get_settings()
-    if not settings.openrouter_api_key:
-        raise RuntimeError("OpenRouter не настроен: укажите OPENROUTER_API_KEY в .env")
+    mid = settings.openrouter_default_model or "perplexity/sonar-pro"
+    return [
+        {
+            "id": mid,
+            "name": mid,
+            "description": "Fallback: OpenRouter с сервера недоступен (security policy). Используется модель по умолчанию.",
+            "context_length": None,
+            "supported_parameters": ["tools"],
+            "supports_tools": True,
+            "pricing_prompt": None,
+            "pricing_completion": None,
+            "price_prompt_per_1m": None,
+            "price_completion_per_1m": None,
+            "price_label": "кэш / offline",
+            "match_reasons": ["tools"],
+            "provider": "openrouter",
+        }
+    ]
 
-    url = settings.openrouter_base_url.rstrip("/") + "/models"
-    headers = {
-        "Authorization": f"Bearer {settings.openrouter_api_key}",
-        "HTTP-Referer": settings.openrouter_http_referer,
-        "X-Title": settings.openrouter_app_title,
-    }
-    async with httpx.AsyncClient(timeout=60.0) as client:
-        response = await client.get(url, headers=headers)
-        response.raise_for_status()
-        payload = response.json()
 
+def _read_models_cache() -> list[dict[str, Any]] | None:
+    try:
+        if not MODELS_CACHE_PATH.exists():
+            return None
+        data = json.loads(MODELS_CACHE_PATH.read_text(encoding="utf-8"))
+        models = data.get("models") if isinstance(data, dict) else data
+        if isinstance(models, list) and models:
+            return models
+    except Exception as exc:
+        logger.warning("models cache read failed: %s", exc)
+    return None
+
+
+def _write_models_cache(models: list[dict[str, Any]]) -> None:
+    try:
+        MODELS_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        MODELS_CACHE_PATH.write_text(
+            json.dumps({"updated_at": time.time(), "models": models}, ensure_ascii=False),
+            encoding="utf-8",
+        )
+    except Exception as exc:
+        logger.warning("models cache write failed: %s", exc)
+
+
+def _parse_openrouter_models_payload(payload: dict[str, Any]) -> list[dict[str, Any]]:
     models = payload.get("data") or []
     result: list[dict[str, Any]] = []
     for m in models:
@@ -326,7 +362,6 @@ async def list_openrouter_search_rag_models() -> list[dict[str, Any]]:
 
     result.sort(
         key=lambda x: (
-            # Prefer models with native web_search_options, then cheaper
             0 if "web_search_options" in (x.get("match_reasons") or []) else 1,
             x.get("price_prompt_per_1m") is None,
             x.get("price_prompt_per_1m") if x.get("price_prompt_per_1m") is not None else 1e9,
@@ -334,6 +369,40 @@ async def list_openrouter_search_rag_models() -> list[dict[str, Any]]:
         )
     )
     return result
+
+
+async def list_openrouter_search_rag_models() -> list[dict[str, Any]]:
+    settings = get_settings()
+    if not settings.openrouter_api_key:
+        cached = _read_models_cache()
+        if cached:
+            return cached
+        return _fallback_models()
+
+    url = settings.openrouter_base_url.rstrip("/") + "/models"
+    headers = {
+        "Authorization": f"Bearer {settings.openrouter_api_key}",
+        "HTTP-Referer": settings.openrouter_http_referer,
+        "X-Title": settings.openrouter_app_title,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.get(url, headers=headers)
+            response.raise_for_status()
+            payload = response.json()
+        result = _parse_openrouter_models_payload(payload)
+        if result:
+            _write_models_cache(result)
+            return result
+    except Exception as exc:
+        logger.warning("OpenRouter /models failed: %s", exc)
+        cached = _read_models_cache()
+        if cached:
+            return cached
+        return _fallback_models()
+
+    cached = _read_models_cache()
+    return cached or _fallback_models()
 
 
 async def get_model_pricing(model_id: str) -> dict[str, Any] | None:

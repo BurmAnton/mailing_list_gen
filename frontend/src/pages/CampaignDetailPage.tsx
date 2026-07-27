@@ -146,7 +146,7 @@ export function CampaignDetailPage() {
       api.listDrafts(campaignId),
       api.status(campaignId),
       api.listProviders(),
-      api.listModels(),
+      api.listModels().catch(() => [] as LLMModel[]),
       api.listRagFiles(campaignId),
       api.costEstimate(campaignId).catch(() => null),
       api.listSegmentFields(campaignId).catch(() => [] as SegmentField[]),
